@@ -197,6 +197,8 @@ body {
 }
 
 /* ── Info banner ── */
+.info-banner-green { background: #e0ffe0 !important; }
+
 .info-banner {
   background: #ffffc0;
   border-top: 2px solid var(--win-light);

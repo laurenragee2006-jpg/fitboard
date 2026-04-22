@@ -139,6 +139,7 @@ function renderWardrobe() {
   const banner = document.getElementById('silhouetteBanner');
 
   banner.style.display = state.silhouette ? 'none' : 'flex';
+  document.getElementById('silhouetteSet').style.display = state.silhouette ? 'flex' : 'none';
   grid.innerHTML = '';
 
   if (state.clothes.length === 0) {
@@ -339,6 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('addClothesBtn').addEventListener('click', () => { resetAddClothesModal(); openModal('addClothes'); });
   document.getElementById('setSilhouetteBtn').addEventListener('click', () => { resetSilhouetteModal(); openModal('silhouette'); });
+  document.getElementById('changeSilhouetteBtn').addEventListener('click', () => { resetSilhouetteModal(); openModal('silhouette'); });
 
   document.getElementById('clothesUploadArea').addEventListener('click', () => document.getElementById('clothesFileInput').click());
   document.getElementById('clothesFileInput').addEventListener('change', e => { if (e.target.files[0]) processClothesImage(e.target.files[0]); });
