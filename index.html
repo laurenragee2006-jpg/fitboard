@@ -3,72 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="theme-color" content="#232324">
+  <meta name="theme-color" content="#d4d0c8">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>fitboard</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <nav class="topnav">
-    <div class="logo">fitboard</div>
-    <div class="nav-tabs">
-      <button class="nav-btn active" data-view="wardrobe">wardrobe</button>
-      <button class="nav-btn" data-view="builder">builder</button>
-      <button class="nav-btn" data-view="outfits">outfits</button>
-    </div>
-  </nav>
+  <div class="desktop">
+    <div class="window">
 
-  <!-- WARDROBE -->
-  <div id="view-wardrobe" class="view active">
-    <div class="view-header">
-      <h2>wardrobe</h2>
-      <button class="btn-primary" id="addClothesBtn">+ add item</button>
-    </div>
-    <div id="silhouetteBanner" class="setup-banner">
-      <p>upload your silhouette to start building outfits</p>
-      <button class="btn-secondary" id="setSilhouetteBtn">upload silhouette</button>
-    </div>
-    <div class="clothes-grid" id="clothesGrid"></div>
-    <div class="empty-state" id="wardrobeEmpty">
-      <p>no clothes yet</p>
-      <p class="hint">upload photos — backgrounds are removed automatically</p>
-    </div>
-  </div>
-
-  <!-- BUILDER -->
-  <div id="view-builder" class="view">
-    <div class="builder-layout">
-      <div class="canvas-wrap">
-        <canvas id="fitCanvas"></canvas>
-        <div class="canvas-hint" id="canvasHint">add clothes from the strip below</div>
-      </div>
-      <div class="builder-toolbar">
-        <div class="wardrobe-strip" id="wardrobeStrip">
-          <div class="strip-empty" id="stripEmpty">add clothes in wardrobe first</div>
+      <!-- Title bar -->
+      <div class="titlebar">
+        <div class="titlebar-left">
+          <span class="titlebar-icon">👗</span>
+          <span class="titlebar-title">fitboard — Outfit Builder</span>
         </div>
-        <div class="builder-actions">
-          <button class="btn-icon" id="deleteSelected" title="remove">✕</button>
-          <button class="btn-icon" id="bringForward" title="layer up">↑</button>
-          <button class="btn-icon" id="sendBack" title="layer down">↓</button>
-          <button class="btn-icon" id="flipH" title="flip">⇄</button>
-          <button class="btn-primary" id="saveOutfitBtn">save</button>
+        <div class="window-controls">
+          <button class="wc-btn">_</button>
+          <button class="wc-btn">□</button>
+          <button class="wc-btn wc-close">✕</button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- OUTFITS -->
-  <div id="view-outfits" class="view">
-    <div class="view-header">
-      <h2>saved outfits</h2>
-      <button class="btn-secondary" id="newOutfitBtn">+ new outfit</button>
-    </div>
-    <div class="outfits-grid" id="outfitsGrid"></div>
-    <div class="empty-state" id="outfitsEmpty">
-      <p>no outfits saved yet</p>
-      <p class="hint">build an outfit and tap save</p>
+      <!-- Menu bar -->
+      <div class="menubar">
+        <span class="menu-item">File</span>
+        <span class="menu-item">Edit</span>
+        <span class="menu-item">View</span>
+        <span class="menu-item">Outfits</span>
+        <span class="menu-item">Help</span>
+      </div>
+
+      <!-- Toolbar / Nav -->
+      <div class="toolbar">
+        <button class="toolbar-btn active" data-view="wardrobe">👚 Wardrobe</button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" data-view="builder">✂️ Builder</button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" data-view="outfits">💾 Outfits</button>
+      </div>
+
+      <!-- Content -->
+      <div class="window-content">
+
+        <!-- WARDROBE -->
+        <div id="view-wardrobe" class="view active">
+          <div class="view-header">
+            <div class="section-title">📁 My Wardrobe</div>
+            <button class="btn-primary" id="addClothesBtn">+ Add Item</button>
+          </div>
+          <div id="silhouetteBanner" class="info-banner">
+            <span>⚠️ Set up your silhouette to start building outfits!</span>
+            <button class="btn-secondary" id="setSilhouetteBtn">Upload Silhouette</button>
+          </div>
+          <div class="clothes-grid" id="clothesGrid"></div>
+          <div class="empty-state" id="wardrobeEmpty">
+            <div class="empty-icon">👗</div>
+            <p>No clothes yet!</p>
+            <p class="hint">Upload photos — backgrounds removed automatically ✨</p>
+          </div>
+        </div>
+
+        <!-- BUILDER -->
+        <div id="view-builder" class="view">
+          <div class="builder-layout">
+            <div class="canvas-wrap">
+              <canvas id="fitCanvas"></canvas>
+              <div class="canvas-hint" id="canvasHint">Click clothes below to add them ↓</div>
+            </div>
+            <div class="builder-toolbar">
+              <div class="wardrobe-strip" id="wardrobeStrip">
+                <div class="strip-empty" id="stripEmpty">Add clothes in Wardrobe first!</div>
+              </div>
+              <div class="builder-actions">
+                <button class="btn-tool" id="deleteSelected" title="Remove">✕</button>
+                <button class="btn-tool" id="bringForward" title="Layer up">↑</button>
+                <button class="btn-tool" id="sendBack" title="Layer down">↓</button>
+                <button class="btn-tool" id="flipH" title="Flip">⇄</button>
+                <button class="btn-primary" id="saveOutfitBtn">💾 Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OUTFITS -->
+        <div id="view-outfits" class="view">
+          <div class="view-header">
+            <div class="section-title">💾 Saved Outfits</div>
+            <button class="btn-secondary" id="newOutfitBtn">+ New Outfit</button>
+          </div>
+          <div class="outfits-grid" id="outfitsGrid"></div>
+          <div class="empty-state" id="outfitsEmpty">
+            <div class="empty-icon">💾</div>
+            <p>No outfits saved yet!</p>
+            <p class="hint">Build an outfit and click Save 💕</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Status bar -->
+      <div class="statusbar">
+        <div class="status-pane" id="statusText">Ready</div>
+        <div class="status-pane">fitboard v1.0</div>
+        <div class="status-pane">💕</div>
+      </div>
+
     </div>
   </div>
 
@@ -77,53 +118,53 @@
 
     <!-- Add Clothes Modal -->
     <div class="modal" id="addClothesModal">
-      <div class="modal-header">
-        <h3>add clothing item</h3>
-        <button class="close-modal">✕</button>
+      <div class="modal-titlebar">
+        <span>👚 Add Clothing Item</span>
+        <button class="close-modal wc-btn wc-close">✕</button>
       </div>
       <div class="modal-body">
         <div class="upload-area" id="clothesUploadArea">
           <div class="upload-icon">📷</div>
-          <p>tap to upload a photo</p>
-          <p class="hint">background will be removed automatically</p>
+          <p>Click to upload a photo</p>
+          <p class="hint">Background will be removed automatically!</p>
           <input type="file" accept="image/*" id="clothesFileInput" hidden>
         </div>
         <div class="processing-state" id="clothesProcessing" hidden>
-          <div class="spinner"></div>
-          <p>removing background...</p>
-          <p class="hint">this may take 10–30 seconds the first time</p>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill"></div></div>
+          <p>Removing background... please wait ✨</p>
+          <p class="hint">May take 10–30 seconds the first time</p>
         </div>
         <div class="preview-state" id="clothesPreview" hidden>
           <div class="preview-img-wrap">
             <img id="clothesPreviewImg" alt="preview">
           </div>
-          <input type="text" id="clothesLabel" placeholder="label (e.g. black jeans)" class="text-input">
+          <input type="text" id="clothesLabel" placeholder="Label (e.g. black jeans)" class="text-input">
           <select id="clothesCategory" class="select-input">
-            <option value="top">top</option>
-            <option value="bottom">bottom</option>
-            <option value="shoes">shoes</option>
-            <option value="outerwear">outerwear</option>
-            <option value="accessory">accessory</option>
+            <option value="top">Top</option>
+            <option value="bottom">Bottom</option>
+            <option value="shoes">Shoes</option>
+            <option value="outerwear">Outerwear</option>
+            <option value="accessory">Accessory</option>
           </select>
         </div>
       </div>
       <div class="modal-footer" id="clothesModalFooter" hidden>
-        <button class="btn-secondary close-modal">cancel</button>
-        <button class="btn-primary" id="confirmAddClothes">add to wardrobe</button>
+        <button class="btn-secondary close-modal">Cancel</button>
+        <button class="btn-primary" id="confirmAddClothes">Add to Wardrobe</button>
       </div>
     </div>
 
     <!-- Silhouette Modal -->
     <div class="modal" id="silhouetteModal">
-      <div class="modal-header">
-        <h3>your silhouette</h3>
-        <button class="close-modal">✕</button>
+      <div class="modal-titlebar">
+        <span>🧍 Your Silhouette</span>
+        <button class="close-modal wc-btn wc-close">✕</button>
       </div>
       <div class="modal-body">
-        <p class="hint">upload a full-body photo to use as your outfit canvas. a plain background works best.</p>
+        <p class="hint">Upload a full-body photo to use as your outfit canvas. Plain background works best!</p>
         <div class="upload-area" id="silhouetteUploadArea">
           <div class="upload-icon">🧍</div>
-          <p>tap to upload</p>
+          <p>Click to upload</p>
           <input type="file" accept="image/*" id="silhouetteFileInput" hidden>
         </div>
         <div class="preview-state" id="silhouettePreview" hidden>
@@ -133,25 +174,26 @@
         </div>
       </div>
       <div class="modal-footer" id="silhouetteModalFooter" hidden>
-        <button class="btn-secondary close-modal">cancel</button>
-        <button class="btn-primary" id="confirmSilhouette">use this photo</button>
+        <button class="btn-secondary close-modal">Cancel</button>
+        <button class="btn-primary" id="confirmSilhouette">Use This Photo</button>
       </div>
     </div>
 
     <!-- Save Outfit Modal -->
     <div class="modal" id="saveOutfitModal">
-      <div class="modal-header">
-        <h3>save outfit</h3>
-        <button class="close-modal">✕</button>
+      <div class="modal-titlebar">
+        <span>💾 Save Outfit</span>
+        <button class="close-modal wc-btn wc-close">✕</button>
       </div>
       <div class="modal-body">
-        <input type="text" id="outfitName" placeholder="outfit name (e.g. sunday brunch)" class="text-input">
+        <input type="text" id="outfitName" placeholder="Outfit name (e.g. Sunday Brunch 💕)" class="text-input">
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary close-modal">cancel</button>
-        <button class="btn-primary" id="confirmSaveOutfit">save</button>
+        <button class="btn-secondary close-modal">Cancel</button>
+        <button class="btn-primary" id="confirmSaveOutfit">Save!</button>
       </div>
     </div>
+
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>

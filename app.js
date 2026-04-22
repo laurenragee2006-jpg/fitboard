@@ -18,6 +18,11 @@ function saveState() {
   }
 }
 
+function setStatus(text) {
+  const el = document.getElementById('statusText');
+  if (el) el.textContent = text;
+}
+
 // ── Image compression ──────────────────────────────────────────────────────
 function compressImage(blob, maxDim = 700) {
   return new Promise((resolve) => {
@@ -61,12 +66,11 @@ function initCanvas() {
   const wrap = document.querySelector('.canvas-wrap');
   const w = wrap.clientWidth;
   const h = wrap.clientHeight;
-  const size = Math.min(w, h, 520);
 
   canvas = new fabric.Canvas('fitCanvas', {
-    width: Math.min(w - 8, size),
-    height: Math.min(h - 8, size * 1.25),
-    backgroundColor: '#1a1a1b',
+    width: Math.max(w - 8, 200),
+    height: Math.max(h - 8, 300),
+    backgroundColor: '#ffffff',
   });
 
   if (state.silhouette) loadSilhouette(state.silhouette);
@@ -107,13 +111,14 @@ function addClothesToCanvas(item) {
     canvas.setActiveObject(img);
     canvas.renderAll();
     document.getElementById('canvasHint').classList.add('hidden');
+    setStatus(`Added: ${item.label}`);
   });
 }
 
 // ── View switching ─────────────────────────────────────────────────────────
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.toolbar-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`view-${name}`).classList.add('active');
   document.querySelector(`[data-view="${name}"]`).classList.add('active');
 
@@ -121,9 +126,10 @@ function switchView(name) {
     if (!canvas) initCanvas();
     else if (state.silhouette && !silhouetteObj) loadSilhouette(state.silhouette);
     renderWardrobeStrip();
+    setStatus('Builder — drag clothes onto the canvas');
   }
-  if (name === 'wardrobe') renderWardrobe();
-  if (name === 'outfits') renderOutfits();
+  if (name === 'wardrobe') { renderWardrobe(); setStatus(`Wardrobe — ${state.clothes.length} items`); }
+  if (name === 'outfits') { renderOutfits(); setStatus(`Outfits — ${state.outfits.length} saved`); }
 }
 
 // ── Wardrobe view ──────────────────────────────────────────────────────────
@@ -147,13 +153,14 @@ function renderWardrobe() {
     card.innerHTML = `
       <img src="${item.imageData}" alt="${item.label}" loading="lazy">
       <div class="card-label">${item.label}</div>
-      <button class="card-delete" data-id="${item.id}" title="remove">✕</button>
+      <button class="card-delete" data-id="${item.id}" title="Remove">✕</button>
     `;
     card.querySelector('.card-delete').addEventListener('click', (e) => {
       e.stopPropagation();
       state.clothes = state.clothes.filter(c => c.id !== item.id);
       saveState();
       renderWardrobe();
+      setStatus(`Removed: ${item.label}`);
     });
     grid.appendChild(card);
   });
@@ -198,7 +205,7 @@ function renderOutfits() {
       <img src="${outfit.imageData}" alt="${outfit.name}" loading="lazy">
       <div class="outfit-footer">
         <span class="outfit-name">${outfit.name}</span>
-        <button class="outfit-delete" data-id="${outfit.id}" title="delete">✕</button>
+        <button class="outfit-delete" data-id="${outfit.id}" title="Delete">✕</button>
       </div>
     `;
     card.querySelector('.outfit-delete').addEventListener('click', () => {
@@ -239,13 +246,16 @@ function resetAddClothesModal() {
 async function processClothesImage(file) {
   document.getElementById('clothesUploadArea').hidden = true;
   document.getElementById('clothesProcessing').hidden = false;
+  setStatus('Removing background...');
 
   try {
     const blob = await removeBackground(file);
     pendingClothesData = await compressImage(blob, 700);
+    setStatus('Background removed! ✨');
   } catch(err) {
     console.warn('BG removal failed, using original:', err);
     pendingClothesData = await fileToCompressedBase64(file, 700);
+    setStatus('Ready');
   }
 
   document.getElementById('clothesProcessing').hidden = true;
@@ -268,6 +278,7 @@ function confirmAddClothes() {
   closeModals();
   resetAddClothesModal();
   renderWardrobe();
+  setStatus(`Added to wardrobe: ${label || category}`);
 }
 
 // ── Silhouette flow ────────────────────────────────────────────────────────
@@ -296,10 +307,8 @@ function confirmSilhouette() {
   closeModals();
   resetSilhouetteModal();
   renderWardrobe();
-  if (canvas) {
-    silhouetteObj = null;
-    loadSilhouette(state.silhouette);
-  }
+  setStatus('Silhouette saved! 💕');
+  if (canvas) { silhouetteObj = null; loadSilhouette(state.silhouette); }
 }
 
 // ── Save outfit flow ───────────────────────────────────────────────────────
@@ -310,72 +319,46 @@ function promptSaveOutfit() {
 }
 
 function confirmSaveOutfit() {
-  const name = document.getElementById('outfitName').value.trim() || `outfit ${state.outfits.length + 1}`;
+  const name = document.getElementById('outfitName').value.trim() || `Outfit ${state.outfits.length + 1}`;
   const imageData = canvas.toDataURL({ format: 'jpeg', quality: 0.88 });
-  state.outfits.unshift({
-    id: Date.now().toString(),
-    name,
-    imageData,
-    date: new Date().toLocaleDateString(),
-  });
+  state.outfits.unshift({ id: Date.now().toString(), name, imageData, date: new Date().toLocaleDateString() });
   saveState();
   closeModals();
+  setStatus(`Saved: ${name} 💾`);
 }
 
 // ── Bootstrap ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
   renderWardrobe();
+  setStatus(`Ready — ${state.clothes.length} items in wardrobe`);
 
-  // Nav
-  document.querySelectorAll('.nav-btn').forEach(btn => {
+  document.querySelectorAll('.toolbar-btn').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
-  // Wardrobe
-  document.getElementById('addClothesBtn').addEventListener('click', () => {
-    resetAddClothesModal();
-    openModal('addClothes');
-  });
-  document.getElementById('setSilhouetteBtn').addEventListener('click', () => {
-    resetSilhouetteModal();
-    openModal('silhouette');
-  });
+  document.getElementById('addClothesBtn').addEventListener('click', () => { resetAddClothesModal(); openModal('addClothes'); });
+  document.getElementById('setSilhouetteBtn').addEventListener('click', () => { resetSilhouetteModal(); openModal('silhouette'); });
 
-  // Clothes upload
-  document.getElementById('clothesUploadArea').addEventListener('click', () => {
-    document.getElementById('clothesFileInput').click();
-  });
-  document.getElementById('clothesFileInput').addEventListener('change', e => {
-    if (e.target.files[0]) processClothesImage(e.target.files[0]);
-  });
+  document.getElementById('clothesUploadArea').addEventListener('click', () => document.getElementById('clothesFileInput').click());
+  document.getElementById('clothesFileInput').addEventListener('change', e => { if (e.target.files[0]) processClothesImage(e.target.files[0]); });
   document.getElementById('confirmAddClothes').addEventListener('click', confirmAddClothes);
 
-  // Silhouette upload
-  document.getElementById('silhouetteUploadArea').addEventListener('click', () => {
-    document.getElementById('silhouetteFileInput').click();
-  });
-  document.getElementById('silhouetteFileInput').addEventListener('change', e => {
-    if (e.target.files[0]) processSilhouetteImage(e.target.files[0]);
-  });
+  document.getElementById('silhouetteUploadArea').addEventListener('click', () => document.getElementById('silhouetteFileInput').click());
+  document.getElementById('silhouetteFileInput').addEventListener('change', e => { if (e.target.files[0]) processSilhouetteImage(e.target.files[0]); });
   document.getElementById('confirmSilhouette').addEventListener('click', confirmSilhouette);
 
-  // Close modals
-  document.querySelectorAll('.close-modal').forEach(btn => {
-    btn.addEventListener('click', closeModals);
-  });
-  document.getElementById('modalOverlay').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeModals();
-  });
+  document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModals));
+  document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModals(); });
 
-  // Builder actions
   document.getElementById('saveOutfitBtn').addEventListener('click', promptSaveOutfit);
   document.getElementById('confirmSaveOutfit').addEventListener('click', confirmSaveOutfit);
   document.getElementById('newOutfitBtn').addEventListener('click', () => switchView('builder'));
+  document.getElementById('outfitName').addEventListener('keydown', e => { if (e.key === 'Enter') confirmSaveOutfit(); });
 
   document.getElementById('deleteSelected').addEventListener('click', () => {
     const obj = canvas?.getActiveObject();
-    if (obj && obj !== silhouetteObj) { canvas.remove(obj); canvas.renderAll(); }
+    if (obj && obj !== silhouetteObj) { canvas.remove(obj); canvas.renderAll(); setStatus('Item removed'); }
   });
   document.getElementById('bringForward').addEventListener('click', () => {
     const obj = canvas?.getActiveObject();
@@ -388,10 +371,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('flipH').addEventListener('click', () => {
     const obj = canvas?.getActiveObject();
     if (obj) { obj.set('flipX', !obj.flipX); canvas.renderAll(); }
-  });
-
-  // Enter key in outfit name
-  document.getElementById('outfitName').addEventListener('keydown', e => {
-    if (e.key === 'Enter') confirmSaveOutfit();
   });
 });
