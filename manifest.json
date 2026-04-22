@@ -1,0 +1,10 @@
+{
+  "name": "Fitboard",
+  "short_name": "fitboard",
+  "description": "Build outfits with your actual wardrobe",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#232324",
+  "theme_color": "#232324",
+  "icons": []
+}
