@@ -654,6 +654,89 @@ body {
   outline-offset: -2px;
 }
 
+/* ── Profile selector ── */
+.profile-wrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.profile-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.profile-panel {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  z-index: 200;
+  background: var(--win-gray);
+  border-top: 2px solid var(--win-light);
+  border-left: 2px solid var(--win-light);
+  border-right: 2px solid var(--win-darker);
+  border-bottom: 2px solid var(--win-darker);
+  min-width: 175px;
+  padding: 2px;
+}
+
+.profile-list {
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--win-dark);
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+.profile-item:hover { background: #000080; color: #fff; }
+.profile-item.active { font-weight: bold; }
+
+.profile-item-check { width: 10px; font-size: 8px; flex-shrink: 0; }
+.profile-item-name { flex: 1; }
+
+.profile-item-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 9px;
+  color: inherit;
+  padding: 1px 3px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.profile-item-del:hover { color: #ff4444; }
+.profile-item:hover .profile-item-del:hover { color: #ffaaaa; }
+
+.profile-panel-footer { padding: 3px 4px; }
+
+/* ── Avatar placeholder (new profile modal) ── */
+.avatar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 20px;
+  background: #fff;
+  border-top: 2px solid var(--win-dark);
+  border-left: 2px solid var(--win-dark);
+  border-right: 2px solid var(--win-light);
+  border-bottom: 2px solid var(--win-light);
+}
+
+.avatar-icon {
+  font-size: 3rem;
+  opacity: 0.28;
+  line-height: 1;
+}
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   body { padding: 0; background: var(--win-gray); }

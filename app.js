@@ -1,23 +1,163 @@
 import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.4.5';
 
-// ── State ──────────────────────────────────────────────────────────────────
+// ── Profiles ───────────────────────────────────────────────────────────────
+let profilesData = { activeId: null, profiles: [] };
 let state = { silhouette: null, clothes: [], outfits: [] };
 
-function loadState() {
-  try {
-    const saved = localStorage.getItem('fitboard_v1');
-    if (saved) state = JSON.parse(saved);
-  } catch(e) {}
+function getActiveProfile() {
+  return profilesData.profiles.find(p => p.id === profilesData.activeId);
 }
 
-function saveState() {
+function loadProfiles() {
   try {
-    localStorage.setItem('fitboard_v1', JSON.stringify(state));
+    const saved = localStorage.getItem('fitboard_profiles_v1');
+    if (saved) {
+      profilesData = JSON.parse(saved);
+    } else {
+      // migrate from old single-user format
+      let oldState = { silhouette: null, clothes: [], outfits: [] };
+      try {
+        const old = localStorage.getItem('fitboard_v1');
+        if (old) oldState = JSON.parse(old);
+      } catch(e) {}
+      const id = Date.now().toString();
+      profilesData = { activeId: id, profiles: [{ id, name: 'my closet', state: oldState }] };
+      saveProfiles();
+    }
+  } catch(e) {
+    const id = Date.now().toString();
+    profilesData = { activeId: id, profiles: [{ id, name: 'my closet', state: { silhouette: null, clothes: [], outfits: [] } }] };
+  }
+  state = getActiveProfile().state;
+}
+
+function saveProfiles() {
+  try {
+    localStorage.setItem('fitboard_profiles_v1', JSON.stringify(profilesData));
   } catch(e) {
     alert('Storage full — try removing some clothes or outfits.');
   }
 }
 
+function saveState() {
+  // state is a live reference into profilesData, so saving profiles saves state
+  saveProfiles();
+}
+
+function switchProfile(id) {
+  profilesData.activeId = id;
+  state = getActiveProfile().state;
+  saveProfiles();
+  // reset canvas for new profile
+  if (canvas) {
+    canvas.getObjects().slice().forEach(obj => canvas.remove(obj));
+    silhouetteObj = null;
+    canvas.backgroundColor = '#ffffff';
+    canvas.renderAll();
+    if (state.silhouette) loadSilhouette(state.silhouette);
+    renderWardrobeStrip();
+  }
+  renderWardrobe();
+  renderProfileBtn();
+  setStatus(`Profile: ${getActiveProfile().name}`);
+}
+
+function createProfile(name) {
+  const id = Date.now().toString();
+  profilesData.profiles.push({
+    id,
+    name: name || 'new profile',
+    state: { silhouette: null, clothes: [], outfits: [] },
+  });
+  saveProfiles();
+  switchProfile(id);
+}
+
+function deleteProfile(id) {
+  if (profilesData.profiles.length <= 1) return;
+  profilesData.profiles = profilesData.profiles.filter(p => p.id !== id);
+  if (profilesData.activeId === id) {
+    profilesData.activeId = profilesData.profiles[0].id;
+    state = getActiveProfile().state;
+  }
+  saveProfiles();
+  renderProfileBtn();
+  renderProfilePanel();
+  // re-render views in case active profile changed
+  if (profilesData.activeId === id) {
+    renderWardrobe();
+    if (canvas) {
+      canvas.getObjects().slice().forEach(obj => canvas.remove(obj));
+      silhouetteObj = null;
+      canvas.backgroundColor = '#ffffff';
+      if (state.silhouette) loadSilhouette(state.silhouette);
+      canvas.renderAll();
+    }
+  }
+}
+
+// ── Profile UI ─────────────────────────────────────────────────────────────
+function renderProfileBtn() {
+  const p = getActiveProfile();
+  document.getElementById('profileName').textContent = p ? p.name : '—';
+}
+
+function renderProfilePanel() {
+  const list = document.getElementById('profileList');
+  list.innerHTML = '';
+  profilesData.profiles.forEach(p => {
+    const isActive = p.id === profilesData.activeId;
+    const row = document.createElement('div');
+    row.className = 'profile-item' + (isActive ? ' active' : '');
+
+    const check = document.createElement('span');
+    check.className = 'profile-item-check';
+    check.textContent = isActive ? '▶' : '';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'profile-item-name';
+    nameSpan.textContent = p.name;
+    nameSpan.addEventListener('click', () => {
+      switchProfile(p.id);
+      closeProfilePanel();
+    });
+
+    row.appendChild(check);
+    row.appendChild(nameSpan);
+
+    if (profilesData.profiles.length > 1) {
+      const del = document.createElement('button');
+      del.className = 'profile-item-del';
+      del.title = 'delete profile';
+      del.textContent = '✕';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete "${p.name}"? This will remove all its clothes and outfits.`)) {
+          deleteProfile(p.id);
+        }
+      });
+      row.appendChild(del);
+    }
+
+    list.appendChild(row);
+  });
+}
+
+function toggleProfilePanel() {
+  const panel = document.getElementById('profilePanel');
+  if (panel.hidden) {
+    renderProfilePanel();
+    panel.hidden = false;
+  } else {
+    closeProfilePanel();
+  }
+}
+
+function closeProfilePanel() {
+  document.getElementById('profilePanel').hidden = true;
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
 function setStatus(text) {
   const el = document.getElementById('statusText');
   if (el) el.textContent = text;
@@ -220,6 +360,7 @@ function renderOutfits() {
 
 // ── Modal system ───────────────────────────────────────────────────────────
 function openModal(name) {
+  closeProfilePanel();
   document.getElementById('modalOverlay').classList.add('open');
   document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
   document.getElementById(`${name}Modal`).classList.add('active');
@@ -247,7 +388,7 @@ function resetAddClothesModal() {
 async function processClothesImage(file) {
   document.getElementById('clothesUploadArea').hidden = true;
   document.getElementById('clothesProcessing').hidden = false;
-  setStatus('Removing background...');
+  setStatus('Removing background…');
 
   try {
     const blob = await removeBackground(file);
@@ -328,36 +469,75 @@ function confirmSaveOutfit() {
   setStatus(`Saved: ${name} 💾`);
 }
 
+// ── New profile flow ───────────────────────────────────────────────────────
+function confirmNewProfile() {
+  const name = document.getElementById('newProfileName').value.trim();
+  if (!name) {
+    document.getElementById('newProfileName').focus();
+    return;
+  }
+  closeModals();
+  createProfile(name);
+  setStatus(`New profile created: ${name}`);
+}
+
 // ── Bootstrap ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  loadState();
+  loadProfiles();
   renderWardrobe();
+  renderProfileBtn();
   setStatus(`Ready — ${state.clothes.length} items in wardrobe`);
 
-  document.querySelectorAll('.toolbar-btn').forEach(btn => {
+  // Nav
+  document.querySelectorAll('.toolbar-btn[data-view]').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
+  // Profile panel
+  document.getElementById('profileMenuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleProfilePanel();
+  });
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('profileWrap').contains(e.target)) {
+      closeProfilePanel();
+    }
+  });
+  document.getElementById('newProfileBtn').addEventListener('click', () => {
+    closeProfilePanel();
+    document.getElementById('newProfileName').value = '';
+    openModal('newProfile');
+    setTimeout(() => document.getElementById('newProfileName').focus(), 50);
+  });
+  document.getElementById('confirmNewProfile').addEventListener('click', confirmNewProfile);
+  document.getElementById('newProfileName').addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewProfile(); });
+
+  // Wardrobe
   document.getElementById('addClothesBtn').addEventListener('click', () => { resetAddClothesModal(); openModal('addClothes'); });
   document.getElementById('setSilhouetteBtn').addEventListener('click', () => { resetSilhouetteModal(); openModal('silhouette'); });
   document.getElementById('changeSilhouetteBtn').addEventListener('click', () => { resetSilhouetteModal(); openModal('silhouette'); });
 
+  // Clothes upload
   document.getElementById('clothesUploadArea').addEventListener('click', () => document.getElementById('clothesFileInput').click());
   document.getElementById('clothesFileInput').addEventListener('change', e => { if (e.target.files[0]) processClothesImage(e.target.files[0]); });
   document.getElementById('confirmAddClothes').addEventListener('click', confirmAddClothes);
 
+  // Silhouette upload
   document.getElementById('silhouetteUploadArea').addEventListener('click', () => document.getElementById('silhouetteFileInput').click());
   document.getElementById('silhouetteFileInput').addEventListener('change', e => { if (e.target.files[0]) processSilhouetteImage(e.target.files[0]); });
   document.getElementById('confirmSilhouette').addEventListener('click', confirmSilhouette);
 
+  // Modals
   document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModals));
   document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModals(); });
 
+  // Save outfit
   document.getElementById('saveOutfitBtn').addEventListener('click', promptSaveOutfit);
   document.getElementById('confirmSaveOutfit').addEventListener('click', confirmSaveOutfit);
   document.getElementById('newOutfitBtn').addEventListener('click', () => switchView('builder'));
   document.getElementById('outfitName').addEventListener('keydown', e => { if (e.key === 'Enter') confirmSaveOutfit(); });
 
+  // Canvas tools
   document.getElementById('deleteSelected').addEventListener('click', () => {
     const obj = canvas?.getActiveObject();
     if (obj && obj !== silhouetteObj) { canvas.remove(obj); canvas.renderAll(); setStatus('Item removed'); }
